@@ -198,6 +198,30 @@ export default function App() {
     }
   };
 
+  const handleAccountDeleted = async (deletionResult) => {
+    setParentProfile(null);
+    setActiveQuizData(null);
+    setCurrentSessionInfo(null);
+
+    if (deletionResult?.clearedDeviceChildSession || deletionResult?.deletedEntireFamily) {
+      setPersistedChild(null);
+      setChildProfile(null);
+      setAuthInitialMode('select');
+      setRole(null);
+      return;
+    }
+
+    const latestChild = await getPersistedChildSession();
+    if (latestChild) {
+      setPersistedChild(latestChild);
+      setChildProfile(latestChild);
+      setRole('child');
+    } else {
+      setAuthInitialMode('select');
+      setRole(null);
+    }
+  };
+
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
@@ -269,6 +293,7 @@ export default function App() {
                   onParentProfileUpdated={(updatedParent) => {
                     setParentProfile(updatedParent);
                   }}
+                  onAccountDeleted={handleAccountDeleted}
                 />
               ) : activeQuizData ? (
                 <ChildQuizScreen

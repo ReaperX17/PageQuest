@@ -5,17 +5,33 @@
     "scheme": "pagequest",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#14233C"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.readingtracker.app"
+      "bundleIdentifier": "com.readingtracker.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",
-      "package": "com.readingtracker.app"
+      "package": "com.readingtracker.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#14233C"
+      }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     }
   }
 }

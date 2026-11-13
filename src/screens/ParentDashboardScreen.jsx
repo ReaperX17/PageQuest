@@ -23,6 +23,7 @@ import {
   getParentSettings,
   saveParentSettings,
   getFamilyContextForParent,
+  deleteParentAccountAndData,
   DEFAULT_PARENT_SETTINGS
 } from '../services/authService';
 import {
@@ -52,7 +53,8 @@ export default function ParentDashboardScreen({
   parentProfile,
   persistedChild,
   onDeviceChildLinked,
-  onParentProfileUpdated
+  onParentProfileUpdated,
+  onAccountDeleted
 }) {
   // 5 Adult Tabs: 'library', 'quizzes', 'history', 'profiles', 'settings'
   const [activeTab, setActiveTab] = useState('library');
@@ -119,6 +121,7 @@ export default function ParentDashboardScreen({
 
   // Settings Tab: App & Notification Preferences State
   const [appSettings, setAppSettings] = useState({ ...DEFAULT_PARENT_SETTINGS });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const parentId = parentProfile?.userId || parentProfile?.id;
 
@@ -549,6 +552,22 @@ export default function ParentDashboardScreen({
       Alert.alert("Settings Saved", msg);
     } else {
       setErrorMessage(res.error || "Failed to save settings.");
+    }
+  };
+
+  // Settings Tab: Permanently Delete Parent Account & Family Data (Store Compliance)
+  const handleConfirmDeleteAccount = async (deleteEntireFamily = true) => {
+    clearBanners();
+    const res = await deleteParentAccountAndData(parentId, { deleteEntireFamily });
+    if (!res.success) {
+      setErrorMessage(res.error || "Failed to delete account.");
+      Alert.alert("Deletion Error", res.error || "Failed to delete account.");
+      return;
+    }
+
+    setShowDeleteConfirm(false);
+    if (onAccountDeleted) {
+      onAccountDeleted(res);
     }
   };
 
@@ -1668,6 +1687,62 @@ export default function ParentDashboardScreen({
                   <Text style={styles.buttonText}>Save Notification & Reminder Settings</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Privacy & Account Deletion (Apple App Store & Google Play Store Compliance) */}
+              <View style={[styles.card, styles.dangerZoneCard]}>
+                <Text style={styles.cardHeaderTitle}>🔒 Privacy & Data Management</Text>
+                <Text style={styles.cardSubtext}>
+                  PageQuest stores your family's reading progress, quiz scores, and reward milestones solely for your household and never sells or shares personal data with third-party advertisers. You may permanently delete your parent account and all linked child profiles at any time.
+                </Text>
+
+                {!showDeleteConfirm ? (
+                  <TouchableOpacity
+                    style={[styles.primaryButton, styles.redButton]}
+                    onPress={() => setShowDeleteConfirm(true)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.buttonText}>🗑️ Delete Account & Family Data</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.deleteConfirmBox}>
+                    <Text style={styles.deleteWarningTitle}>
+                      ⚠️ Confirm Permanent Account Deletion
+                    </Text>
+                    <Text style={styles.deleteWarningBody}>
+                      This action cannot be undone. Deleting your family account will permanently erase your parent login, all linked child profiles ({children.length}), book libraries, reading history, and reward milestones.
+                    </Text>
+
+                    <View style={styles.rowGap8}>
+                      <TouchableOpacity
+                        style={[styles.primaryButton, styles.redButton, styles.flexOne]}
+                        onPress={() => handleConfirmDeleteAccount(true)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.buttonText}>Yes, Permanently Delete All Data</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.secondaryButton, styles.flexOne]}
+                        onPress={() => setShowDeleteConfirm(false)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.secondaryButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {coParentsCount > 1 && (
+                      <TouchableOpacity
+                        style={[styles.smallOutlineBtn, { marginTop: 10, alignSelf: 'flex-start' }]}
+                        onPress={() => handleConfirmDeleteAccount(false)}
+                      >
+                        <Text style={[styles.smallOutlineBtnText, { color: COLORS.dangerDark }]}>
+                          Only remove my Co-Parent login (keep family & children for other parent)
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </View>
             </View>
           )}
         </ScrollView>
@@ -1996,6 +2071,30 @@ const styles = StyleSheet.create({
   skyButton: { backgroundColor: COLORS.secondary },
   greenButton: { backgroundColor: COLORS.success },
   amberButton: { backgroundColor: COLORS.warning },
+  redButton: { backgroundColor: COLORS.danger },
+  dangerZoneCard: {
+    borderColor: '#FECACA',
+    borderWidth: 1.5
+  },
+  deleteConfirmBox: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14
+  },
+  deleteWarningTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.dangerDark,
+    marginBottom: 6
+  },
+  deleteWarningBody: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 19,
+    marginBottom: 14
+  },
   buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', textAlign: 'center' },
   emptyCard: {
     backgroundColor: COLORS.surface,

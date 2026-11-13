@@ -18,10 +18,13 @@ PageQuest is a cross-platform mobile and web reading tracker built with **Expo (
   - **🏆 Quizzes**: Complete quiz results and expandable question-by-question answer breakdowns.
   - **🕒 History**: Real-time parent notifications (reading started, page updates, quiz scores, reward requests) and session timeline.
   - **👨‍👩‍👧 Profiles**: Co-parent household management, **Multi-Reward & Milestone Manager** (add/edit/delete/claim rewards and **Approve or Deny** child reward requests), reading reminders (in-app + SMS), and child profile management.
-  - **⚙️ Settings**: Parent account profile & credentials and family notification/reminder preferences.
+  - **⚙️ Settings**: Parent account profile & credentials, family notification/reminder preferences, and **In-App Account & Family Data Deletion** (Apple App Store & Google Play Store compliant).
 - **AI Comprehension Quizzes (`gemini-2.5-flash` + Offline Fallback)**:
   - Generates 10 multiple-choice questions tailored to the child's age and exact page range read.
   - Requires a **90% (9/10)** score to pass and advance the starting page bookmark.
+- **Privacy & Store Readiness**:
+  - Production app icon (`assets/icon.png`), Android adaptive icon (`assets/adaptive-icon.png`), portrait splash screen (`assets/splash.png`), and web favicon (`assets/favicon.png`).
+  - Full [Privacy Policy](./PRIVACY_POLICY.md) and in-app permanent account/data deletion.
 
 ## 🚀 Getting Started
 

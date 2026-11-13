@@ -599,3 +599,139 @@ export async function verifyAndClaimChildInvite(enteredCode) {
     child: claimedChild
   };
 }
+
+/**
+ * Permanently delete a parent account and associated family/child data (Apple App Store & Google Play compliance).
+ * When `deleteEntireFamily` is true (or if this is the sole parent in the household), all linked child profiles,
+ * reading history, libraries, rewards, and notifications for the family are permanently erased.
+ */
+export async function deleteParentAccountAndData(parentId, { deleteEntireFamily = true } = {}) {
+  if (!parentId) {
+    return { success: false, error: "Missing parent account ID." };
+  }
+
+  try {
+    const [allParents, allChildren, familyCtx] = await Promise.all([
+      getAllParents(),
+      getAllChildren(),
+      getFamilyContextForParent(parentId)
+    ]);
+
+    const { familyId, coParents, familyParentIds } = familyCtx;
+    const isSoleParent = (coParents?.length || 1) <= 1;
+    const purgeWholeFamily = deleteEntireFamily || isSoleParent;
+
+    if (!purgeWholeFamily) {
+      // Remove only this co-parent login while preserving the rest of the household
+      const remainingParents = allParents.filter(
+        (p) => p.userId !== parentId && p.id !== parentId
+      );
+      await AsyncStorage.setItem(PARENTS_STORAGE_KEY, JSON.stringify(remainingParents));
+      await AsyncStorage.removeItem(`${PARENT_SETTINGS_PREFIX}${parentId}`);
+      await AsyncStorage.removeItem(`@parent_notifications_${parentId}`);
+      return {
+        success: true,
+        deletedEntireFamily: false,
+        clearedDeviceChildSession: false
+      };
+    }
+
+    // Remove all parents and children belonging to this family
+    const familyChildren = allChildren.filter(
+      (c) =>
+        c.familyId === familyId ||
+        c.parentProfileId === parentId ||
+        familyParentIds.includes(c.parentProfileId)
+    );
+    const deletedChildIds = familyChildren.map((c) => c.id);
+
+    const remainingParents = allParents.filter(
+      (p) =>
+        p.familyId !== familyId &&
+        p.userId !== parentId &&
+        p.id !== parentId &&
+        !familyParentIds.includes(p.userId || p.id)
+    );
+    const remainingChildren = allChildren.filter((c) => !deletedChildIds.includes(c.id));
+
+    await AsyncStorage.setItem(PARENTS_STORAGE_KEY, JSON.stringify(remainingParents));
+    await AsyncStorage.setItem(CHILDREN_STORAGE_KEY, JSON.stringify(remainingChildren));
+
+    // Check if the persisted child on this device belongs to the deleted family
+    let clearedDeviceChildSession = false;
+    const persistedRaw = await AsyncStorage.getItem(PERSISTENT_CHILD_SESSION_KEY);
+    if (persistedRaw) {
+      const persistedChild = JSON.parse(persistedRaw);
+      if (
+        deletedChildIds.includes(persistedChild?.id) ||
+        persistedChild?.familyId === familyId ||
+        familyParentIds.includes(persistedChild?.parentProfileId)
+      ) {
+        await AsyncStorage.removeItem(PERSISTENT_CHILD_SESSION_KEY);
+        clearedDeviceChildSession = true;
+      }
+    }
+
+    // Clean up reading sessions history & live reading map for deleted children
+    const [storedHistoryRaw, storedLiveRaw] = await Promise.all([
+      AsyncStorage.getItem('@reading_sessions_history'),
+      AsyncStorage.getItem('@child_live_reading_status')
+    ]);
+
+    if (storedHistoryRaw) {
+      const history = JSON.parse(storedHistoryRaw);
+      const filteredHistory = history.filter(
+        (s) =>
+          s.familyId !== familyId &&
+          !familyParentIds.includes(s.parentProfileId) &&
+          !deletedChildIds.includes(s.childId)
+      );
+      await AsyncStorage.setItem('@reading_sessions_history', JSON.stringify(filteredHistory));
+    }
+
+    if (storedLiveRaw) {
+      const liveMap = JSON.parse(storedLiveRaw);
+      deletedChildIds.forEach((cId) => {
+        delete liveMap[cId];
+      });
+      await AsyncStorage.setItem('@child_live_reading_status', JSON.stringify(liveMap));
+    }
+
+    // Remove per-child keys & family/parent notification/settings keys
+    const keysToRemove = [
+      `${PARENT_SETTINGS_PREFIX}${familyId}`,
+      `${PARENT_SETTINGS_PREFIX}${parentId}`,
+      `@parent_notifications_${familyId}`,
+      `@parent_notifications_${parentId}`
+    ];
+
+    familyParentIds.forEach((pId) => {
+      keysToRemove.push(`${PARENT_SETTINGS_PREFIX}${pId}`);
+      keysToRemove.push(`@parent_notifications_${pId}`);
+    });
+
+    deletedChildIds.forEach((cId) => {
+      keysToRemove.push(
+        `@child_library_${cId}`,
+        `@child_rewards_list_${cId}`,
+        `@child_reward_${cId}`,
+        `@child_reminders_${cId}`,
+        `@last_reading_session_${cId}`
+      );
+    });
+
+    await AsyncStorage.multiRemove(keysToRemove);
+
+    return {
+      success: true,
+      deletedEntireFamily: true,
+      clearedDeviceChildSession
+    };
+  } catch (e) {
+    console.error("Failed to delete parent account and family data:", e);
+    return {
+      success: false,
+      error: "An error occurred while deleting account data."
+    };
+  }
+}
