@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "PageQuest Reading Tracker",
+    "slug": "reading-tracker-app",
+    "scheme": "pagequest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.readingtracker.app"
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "pan",
+      "package": "com.readingtracker.app"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
