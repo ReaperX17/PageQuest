@@ -6,7 +6,17 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "export:all": "expo export --platform all",
+    "eas:login": "npx eas-cli login",
+    "eas:init": "npx eas-cli project:init",
+    "build:preview": "npx eas-cli build --platform all --profile preview",
+    "build:android": "npx eas-cli build --platform android --profile production",
+    "build:ios": "npx eas-cli build --platform ios --profile production",
+    "build:all": "npx eas-cli build --platform all --profile production",
+    "submit:android": "npx eas-cli submit --platform android --profile production",
+    "submit:ios": "npx eas-cli submit --platform ios --profile production",
+    "submit:all": "npx eas-cli submit --platform all --profile production"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",

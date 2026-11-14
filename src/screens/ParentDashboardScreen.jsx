@@ -13,7 +13,7 @@ import {
   Platform,
   Switch
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cloudStorage as AsyncStorage, isFirebaseConfigured } from '../config/firebaseConfig';
 import {
   getChildrenForParent,
   saveChildForParent,
@@ -1690,7 +1690,24 @@ export default function ParentDashboardScreen({
 
               {/* Privacy & Account Deletion (Apple App Store & Google Play Store Compliance) */}
               <View style={[styles.card, styles.dangerZoneCard]}>
-                <Text style={styles.cardHeaderTitle}>🔒 Privacy & Data Management</Text>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.cardHeaderTitle}>🔒 Privacy & Data Management</Text>
+                  <View
+                    style={[
+                      styles.scoreBadge,
+                      isFirebaseConfigured() ? styles.passBadgeBg : styles.agePill
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.scoreBadgeText,
+                        isFirebaseConfigured() ? styles.passBadgeText : styles.agePillText
+                      ]}
+                    >
+                      {isFirebaseConfigured() ? '☁️ Cloud Sync Active' : '📱 Local Storage Mode'}
+                    </Text>
+                  </View>
+                </View>
                 <Text style={styles.cardSubtext}>
                   PageQuest stores your family's reading progress, quiz scores, and reward milestones solely for your household and never sells or shares personal data with third-party advertisers. You may permanently delete your parent account and all linked child profiles at any time.
                 </Text>

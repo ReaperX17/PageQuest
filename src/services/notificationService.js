@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cloudStorage as AsyncStorage } from '../config/firebaseConfig';
 import { getParentSettings, getFamilyContextForParent } from './authService';
 
 /**

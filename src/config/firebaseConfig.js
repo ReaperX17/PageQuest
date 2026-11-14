@@ -1,0 +1,130 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/**
+ * Firebase Configuration & Cloud-Synced Storage Adapter
+ *
+ * When `EXPO_PUBLIC_FIREBASE_PROJECT_ID` and `EXPO_PUBLIC_FIREBASE_API_KEY` are configured
+ * in `.env` (or EAS Environment Variables), PageQuest automatically syncs family accounts,
+ * child invite codes, live reading progress, quiz history, and reward milestones across
+ * parent and child devices via Cloud Firestore, while caching locally in `AsyncStorage`
+ * for instant offline-capable performance.
+ */
+export const FIREBASE_CONFIG = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || ''
+};
+
+// Keys that remain strictly local to a single physical device
+const DEVICE_LOCAL_ONLY_KEYS = new Set(['@persistent_child_session']);
+
+export function isFirebaseConfigured() {
+  return Boolean(
+    FIREBASE_CONFIG.projectId &&
+      FIREBASE_CONFIG.projectId !== 'your_project_id' &&
+      FIREBASE_CONFIG.apiKey &&
+      FIREBASE_CONFIG.apiKey !== 'your_firebase_api_key'
+  );
+}
+
+function getFirestoreDocUrl(storageKey) {
+  const safeDocId = encodeURIComponent(storageKey.replace(/^@/, 'pq_'));
+  const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+    FIREBASE_CONFIG.projectId
+  )}/databases/(default)/documents/pagequest_store/${safeDocId}`;
+  return FIREBASE_CONFIG.apiKey
+    ? `${base}?key=${encodeURIComponent(FIREBASE_CONFIG.apiKey)}`
+    : base;
+}
+
+/**
+ * Cloud-backed drop-in replacement for AsyncStorage on shared family keys.
+ * - Local-only keys (like `@persistent_child_session`) stay strictly on the device.
+ * - Shared keys sync with Cloud Firestore when configured and fall back to AsyncStorage offline.
+ */
+export const cloudStorage = {
+  async getItem(key) {
+    if (DEVICE_LOCAL_ONLY_KEYS.has(key) || !isFirebaseConfigured()) {
+      return AsyncStorage.getItem(key);
+    }
+
+    try {
+      const response = await fetch(getFirestoreDocUrl(key), {
+        method: 'GET',
+        headers: { Accept: 'application/json' }
+      });
+
+      if (response.ok) {
+        const doc = await response.json();
+        const remoteVal = doc?.fields?.payload?.stringValue;
+        if (typeof remoteVal === 'string') {
+          await AsyncStorage.setItem(key, remoteVal);
+          return remoteVal;
+        }
+      } else if (response.status === 404) {
+        // Document not in cloud yet; if we have local data, push it up in the background
+        const localVal = await AsyncStorage.getItem(key);
+        if (localVal !== null) {
+          this.pushToCloud(key, localVal).catch(() => {});
+        }
+        return localVal;
+      }
+    } catch (err) {
+      // Network offline or unreachable: fall back seamlessly to local cache
+    }
+
+    return AsyncStorage.getItem(key);
+  },
+
+  async setItem(key, value) {
+    await AsyncStorage.setItem(key, value);
+
+    if (!DEVICE_LOCAL_ONLY_KEYS.has(key) && isFirebaseConfigured()) {
+      await this.pushToCloud(key, value);
+    }
+  },
+
+  async removeItem(key) {
+    await AsyncStorage.removeItem(key);
+
+    if (!DEVICE_LOCAL_ONLY_KEYS.has(key) && isFirebaseConfigured()) {
+      try {
+        await fetch(getFirestoreDocUrl(key), { method: 'DELETE' });
+      } catch (err) {
+        // Ignore network errors on delete
+      }
+    }
+  },
+
+  async multiRemove(keys = []) {
+    await AsyncStorage.multiRemove(keys);
+
+    if (isFirebaseConfigured()) {
+      await Promise.all(
+        keys
+          .filter((k) => !DEVICE_LOCAL_ONLY_KEYS.has(k))
+          .map((k) => fetch(getFirestoreDocUrl(k), { method: 'DELETE' }).catch(() => {}))
+      );
+    }
+  },
+
+  async pushToCloud(key, stringValue) {
+    try {
+      await fetch(getFirestoreDocUrl(key), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fields: {
+            payload: { stringValue: String(stringValue) },
+            updatedAt: { stringValue: new Date().toISOString() }
+          }
+        })
+      });
+    } catch (err) {
+      // Offline fallback: data is already saved in AsyncStorage
+    }
+  }
+};

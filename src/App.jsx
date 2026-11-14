@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cloudStorage as AsyncStorage } from './config/firebaseConfig';
 import AuthScreen from './screens/AuthScreen';
 import ChildReadingScreen, { saveChildLiveStatus } from './screens/ChildReadingScreen';
 import ChildQuizScreen from './screens/ChildQuizScreen';

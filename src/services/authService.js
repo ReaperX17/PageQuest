@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cloudStorage as AsyncStorage } from '../config/firebaseConfig';
 import {
   createParentProfile,
   createChildProfile,
@@ -712,8 +712,10 @@ export async function deleteParentAccountAndData(parentId, { deleteEntireFamily 
 
     deletedChildIds.forEach((cId) => {
       keysToRemove.push(
+        `@child_book_library_${cId}`,
         `@child_library_${cId}`,
         `@child_rewards_list_${cId}`,
+        `@child_reward_goal_${cId}`,
         `@child_reward_${cId}`,
         `@child_reminders_${cId}`,
         `@last_reading_session_${cId}`

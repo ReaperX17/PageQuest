@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // PageQuest Cloud Store Collection
+    // Allows parent, co-parent, and child devices to sync reading logs,
+    // invite codes, rewards, and quiz results across devices.
+    match /pagequest_store/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

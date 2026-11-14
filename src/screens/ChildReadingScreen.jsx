@@ -12,7 +12,7 @@ import {
   Platform,
   RefreshControl
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cloudStorage as AsyncStorage } from '../config/firebaseConfig';
 import { generateComprehensionQuiz } from '../services/quizService';
 import { createReadingSession } from '../models/schemas';
 import { getParentSettings } from '../services/authService';
