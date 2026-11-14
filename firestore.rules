@@ -1,11 +1,40 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // PageQuest Cloud Store Collection
-    // Allows parent, co-parent, and child devices to sync reading logs,
-    // invite codes, rewards, and quiz results across devices.
+
+    // 1. Validate that the document ID is a legitimate PageQuest storage key
+    function isValidPageQuestKey(docId) {
+      return docId.matches('^pq_(registered_parents|registered_children|reading_sessions_history|child_live_reading_status|parent_notifications.*|child_reading_reminders.*|parent_settings_.*|child_book_library_.*|child_library_.*|child_rewards_list_.*|child_reward_goal_.*|child_reward_.*|child_reminders_.*|last_reading_session_.*|healthcheck)$');
+    }
+
+    // 2. Validate write schema, size limits (< 500 KB), and PageQuest client write token
+    function isValidPageQuestWrite() {
+      return request.resource.data.keys().hasOnly(['payload', 'updatedAt', 'appToken'])
+        && request.resource.data.appToken == 'pq_v1_client_7f9a2b4e8c1d'
+        && request.resource.data.payload is string
+        && request.resource.data.payload.size() >= 2
+        && request.resource.data.payload.size() < 500000
+        && request.resource.data.updatedAt is string
+        && request.resource.data.updatedAt.size() <= 40;
+    }
+
+    // 3. PageQuest Cloud Store Collection
     match /pagequest_store/{docId} {
-      allow read, write: if true;
+      // Allow direct key lookups only; block collection-wide enumeration/scraping
+      allow get: if isValidPageQuestKey(docId);
+      allow list: if false;
+
+      // Require strict schema, payload size limit, and PageQuest app write token
+      allow create, update: if isValidPageQuestKey(docId) && isValidPageQuestWrite();
+
+      // Allow account/family deletion cleanup on valid PageQuest keys
+      allow delete: if isValidPageQuestKey(docId);
+    }
+
+    // 4. Default-deny all other collections and paths
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

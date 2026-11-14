@@ -11,6 +11,33 @@ const CHILDREN_STORAGE_KEY = '@registered_children';
 const PERSISTENT_CHILD_SESSION_KEY = '@persistent_child_session';
 const PARENT_SETTINGS_PREFIX = '@parent_settings_';
 
+/**
+ * Deterministic salted multi-round password hash so parent passwords are never stored
+ * in plain text in local storage or Cloud Firestore.
+ */
+export function hashParentPassword(username, rawPassword) {
+  const pwd = String(rawPassword || '');
+  if (pwd.startsWith('pqhash$v1$')) return pwd;
+  const normalizedUser = String(username || '').trim().toLowerCase();
+  const salt = `pagequest_salt_v1_${normalizedUser}`;
+  const input = `${salt}:${pwd}:${salt}`;
+
+  let h1 = 0xdeadbeef ^ input.length;
+  let h2 = 0x41c6ce57 ^ input.length;
+  for (let round = 0; round < 64; round++) {
+    for (let i = 0; i < input.length; i++) {
+      const ch = input.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  }
+  const hex1 = (h1 >>> 0).toString(16).padStart(8, '0');
+  const hex2 = (h2 >>> 0).toString(16).padStart(8, '0');
+  return `pqhash$v1$${hex1}${hex2}`;
+}
+
 export const DEFAULT_PARENT_SETTINGS = {
   notifyOnReadingStart: true,
   notifyOnPageUpdate: true,
@@ -41,17 +68,22 @@ export async function getAllParents() {
     const parsed = JSON.parse(stored);
     let migrated = false;
 
-    // Ensure every parent has a familyId and coParentInviteCode
+    // Ensure every parent has a familyId, coParentInviteCode, and hashed password
     const existingCoCodes = parsed.map((p) => p.coParentInviteCode).filter(Boolean);
     const updated = parsed.map((p) => {
-      if (!p.familyId || !p.coParentInviteCode) {
+      const needsPasswordHash =
+        p.password && !String(p.password).startsWith('pqhash$v1$');
+      if (!p.familyId || !p.coParentInviteCode || needsPasswordHash) {
         migrated = true;
         const newCoCode = p.coParentInviteCode || generateChildInviteCode(existingCoCodes);
         existingCoCodes.push(newCoCode);
         return {
           ...p,
           familyId: p.familyId || `family_${p.userId || p.id}`,
-          coParentInviteCode: newCoCode
+          coParentInviteCode: newCoCode,
+          password: needsPasswordHash
+            ? hashParentPassword(p.username, p.password)
+            : p.password
         };
       }
       return p;
@@ -210,7 +242,7 @@ export async function registerParentAccount(parentData, childData, options = {})
       phoneNumber,
       age: parsedParentAge,
       username,
-      password
+      password: hashParentPassword(username, password)
     });
 
     parents.push(coParentProfile);
@@ -265,7 +297,7 @@ export async function registerParentAccount(parentData, childData, options = {})
     phoneNumber,
     age: parsedParentAge,
     username,
-    password
+    password: hashParentPassword(username, password)
   });
 
   const childProfile = createChildProfile({
@@ -304,9 +336,12 @@ export async function loginParent(username, password) {
 
   const parents = await getAllParents();
   const normalizedUsername = username.trim().toLowerCase();
+  const expectedHash = hashParentPassword(normalizedUsername, password);
 
   const matchedParent = parents.find(
-    (p) => p.username === normalizedUsername && p.password === password
+    (p) =>
+      p.username === normalizedUsername &&
+      (p.password === expectedHash || p.password === password)
   );
 
   if (!matchedParent) {
@@ -379,7 +414,9 @@ export async function updateParentAccount(parentId, { name, email, phoneNumber, 
     phoneNumber: normalizePhoneNumber(phoneNumber),
     age: parsedAge,
     username: normalizedUsername,
-    password: newPassword ? newPassword : parents[idx].password,
+    password: newPassword
+      ? hashParentPassword(normalizedUsername, newPassword)
+      : parents[idx].password,
     updatedAt: new Date().toISOString()
   };
 

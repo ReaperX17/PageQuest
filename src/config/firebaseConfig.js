@@ -18,6 +18,9 @@ export const FIREBASE_CONFIG = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || ''
 };
 
+// App-level write verification token checked by Firestore Security Rules (firestore.rules)
+const PAGEQUEST_APP_WRITE_TOKEN = 'pq_v1_client_7f9a2b4e8c1d';
+
 // Keys that remain strictly local to a single physical device
 const DEVICE_LOCAL_ONLY_KEYS = new Set(['@persistent_child_session']);
 
@@ -117,7 +120,8 @@ export const cloudStorage = {
         body: JSON.stringify({
           fields: {
             payload: { stringValue: String(stringValue) },
-            updatedAt: { stringValue: new Date().toISOString() }
+            updatedAt: { stringValue: new Date().toISOString() },
+            appToken: { stringValue: PAGEQUEST_APP_WRITE_TOKEN }
           }
         })
       });
