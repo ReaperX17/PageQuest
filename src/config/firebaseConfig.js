@@ -10,10 +10,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * for instant offline-capable performance.
  */
 export const FIREBASE_CONFIG = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyCiGds_GDJSn6zqJbv2YqtWnxD41GmHoBQ',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || 'pagequest-c23f1.firebaseapp.com',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'pagequest-c23f1',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || 'pagequest-c23f1.firebasestorage.app',
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || ''
 };
@@ -24,9 +24,7 @@ const DEVICE_LOCAL_ONLY_KEYS = new Set(['@persistent_child_session']);
 export function isFirebaseConfigured() {
   return Boolean(
     FIREBASE_CONFIG.projectId &&
-      FIREBASE_CONFIG.projectId !== 'your_project_id' &&
-      FIREBASE_CONFIG.apiKey &&
-      FIREBASE_CONFIG.apiKey !== 'your_firebase_api_key'
+      FIREBASE_CONFIG.projectId !== 'your_project_id'
   );
 }
 
@@ -35,7 +33,7 @@ function getFirestoreDocUrl(storageKey) {
   const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
     FIREBASE_CONFIG.projectId
   )}/databases/(default)/documents/pagequest_store/${safeDocId}`;
-  return FIREBASE_CONFIG.apiKey
+  return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'your_firebase_api_key'
     ? `${base}?key=${encodeURIComponent(FIREBASE_CONFIG.apiKey)}`
     : base;
 }
