@@ -32,6 +32,12 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
+    },
+    "owner": "bostainj",
+    "extra": {
+      "eas": {
+        "projectId": "98f77063-9a98-4413-bc12-fa343276e730"
+      }
     }
   }
 }
