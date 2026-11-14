@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "PageQuest Reading Tracker",
-    "slug": "reading-tracker-app",
+    "slug": "bostainj",
     "scheme": "pagequest",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -33,10 +33,10 @@
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
-    "owner": "bostainj",
+    "owner": "dreams-come-true",
     "extra": {
       "eas": {
-        "projectId": "98f77063-9a98-4413-bc12-fa343276e730"
+        "projectId": "95fe592d-3fd5-42a0-a0fd-2182edf3d260"
       }
     }
   }
