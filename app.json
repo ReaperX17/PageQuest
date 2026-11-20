@@ -23,12 +23,15 @@
     "android": {
       "softwareKeyboardLayoutMode": "pan",
       "package": "myapp.pagequest",
-      "versionCode": 4,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#14233C"
       }
     },
+    "plugins": [
+      "./plugins/withOptionalHardwareFeatures"
+    ],
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
