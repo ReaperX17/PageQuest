@@ -4,7 +4,7 @@
     "slug": "bostainj",
     "scheme": "pagequest",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -23,7 +23,7 @@
     "android": {
       "softwareKeyboardLayoutMode": "pan",
       "package": "myapp.pagequest",
-      "versionCode": 2,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#14233C"
