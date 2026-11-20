@@ -1,7 +1,7 @@
 # Privacy Policy for PageQuest Reading Tracker
 
 **Effective Date:** November 13, 2026  
-**Application Name:** PageQuest Reading Tracker (`com.readingtracker.app`)  
+**Application Name:** PageQuest Reading Tracker (`myapp.pagequest`)  
 **Repository & Support:** https://github.com/ReaperX17/PageQuest
 
 ---

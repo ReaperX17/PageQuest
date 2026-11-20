@@ -14,16 +14,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.readingtracker.app",
-      "buildNumber": "1",
+      "bundleIdentifier": "myapp.pagequest",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",
-      "package": "com.readingtracker.app",
-      "versionCode": 1,
+      "package": "myapp.pagequest",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#14233C"
